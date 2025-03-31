@@ -17,7 +17,7 @@
     }
     #root header{
     height:50%;
-    background-image: url("https://github.com/Fortressdesign4/fortressdesign/blob/main/bg.png");
+    background-image: url(https://github.com/Fortressdesign4/fortressdesign/blob/main/bg.png);
     }
     .nav-icon, .dark-toggle {
       cursor: pointer;
