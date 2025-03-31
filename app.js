@@ -112,6 +112,7 @@
       </ul>
     </div>
     <header id="header" style="padding:20px;">
+    <h1>Willkommen bei Fortressdesign</h1>
       <p>Willkommen bei Fortressdesign. Toggle Dark Mode, Navigation & Cookie-Zustimmung!</p>
     </header>
   `;
