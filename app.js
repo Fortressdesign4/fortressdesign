@@ -15,6 +15,9 @@
       color: #fff;
       padding: 10px 20px;
     }
+    #root header{
+    height:50%;
+    background-image: url("https://github.com/Fortressdesign4/fortressdesign/blob/main/bg.png");
     .nav-icon, .dark-toggle {
       cursor: pointer;
       font-size: 20px;
