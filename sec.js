@@ -1,2 +1,73 @@
 // @ts-nocheck
-export function cleanFortress(e){if(!e||!e.querySelectorAll)return;const o=e.querySelector("#fortressdesign");o&&(console.log("🔐 Fortress-Schutz aktiv"),injectNoCacheMeta(),blockFrameUsage(),logCSPInfo(),logUAInfo(),detectTimezone(),removeTags(o),cleanAttrs(o),detectDevTools(),logCanvasFingerprint(),blockSendBeacon(),xssScan(o),"undefined"!=typeof window&&(blockWebRTC(),leakWebRTC(),headerTest(),test403(),detectFreeze(),geoIPLeak(),checkLocalhostLeaks(),testStorageIsolation(),dnsLeakCheck(),run304Test(),console.log("✅ Fortress abgeschlossen")))}function run304Test(){setInterval((()=>{fetch(window.location.href,{cache:"no-store"}).then((e=>{304!==e.status&&0!==e.status||(console.warn("♻️ HTTP 304 erkannt – möglicher Cache-Replay:",e.url),freezeRecovery())})).catch((()=>{}))}),1e3)}function freezeRecovery(){const e=Date.now(),o=e-(window.__nis2_lastTick||e);if(window.__nis2_lastTick=e,o>2e3){console.error("🧊 Freeze erkannt – Wiederherstellung wird eingeleitet");try{localStorage.clear(),sessionStorage.clear()}catch{}document.body.innerHTML='<h1 style="color:lime">🔄 Wiederherstellung nach Freeze</h1>',setTimeout((()=>location.reload()),500)}}function blockSendBeacon(){navigator.sendBeacon&&(navigator.sendBeacon=()=>!1,console.log("📡 Beacon blockiert"))}function xssScan(e){[...e.querySelectorAll("*")].filter((e=>/<script|onerror=|onload=|javascript:|data:text\/html/.test(e.outerHTML))).forEach((e=>console.warn("⚠️ XSS-Verdacht:",e.outerHTML.slice(0,200))))}function dnsLeakCheck(){let e=!1;["http://dnsleak.local/check.png","http://leak.test/img.png","http://trace.invalid/ping.png"].forEach((o=>{const t=new Image;t.src=o+"?t="+Date.now(),t.onload=()=>{e||(e=!0,console.warn("🌐 DNS-Leak erkannt über:",o))},t.onerror=()=>{console.log("✅ Kein DNS-Leak bei:",o)}})),setTimeout((()=>{e||console.log("✅ Alle DNS-Leak-Checks negativ")}),2e3);["http://[::1]:80","https://[2001:4860:4860::8888]:3478","https://[2606:4700:4700::1111]:19302","http://icmp-leak.test/ping","stun:stun.l.google.com:19302"].forEach((e=>{try{fetch(e,{mode:"no-cors"}).then((()=>console.warn("🚨 WebRTC/Netzwerk Leak erkannt:",e))).catch((()=>console.log("✅ Kein Leak über:",e)))}catch(e){}})),console.log("🛡️ ISO 27001 + NIS-2 304-Schutz aktiv…");const o=Date.now();setInterval((()=>{Date.now()-o>9e5&&(console.warn("⏳ Sitzung abgelaufen – Seite wird neu geladen."),location.reload())}),6e4),setInterval((()=>{performance.getEntriesByType("resource").forEach((e=>{if(0===e.transferSize&&"xmlhttprequest"!==e.initiatorType){console.warn("🚨 Möglicher 304/Cached Zugriff erkannt bei:",e.name);const o=new URL(e.name,location.href);o.searchParams.set("_reload",Date.now()),fetch(o.toString(),{method:"GET",cache:"no-store",headers:{Pragma:"no-cache","Cache-Control":"no-cache"},mode:"no-cors"}).then((e=>{const t=e.status||"(opaque)";console.log("♻️ Nachgeladen:",o.href,"| Status:",t)})).catch((e=>{console.error("❌ Fehler beim Nachladen von:",o.href,e)}))}}))}),1e3)}
+export function cleanFortress(e) {
+    if (!e || !e.querySelectorAll) return;
+
+    const o = e.querySelector("#fortressdesign");
+    if (o) {
+        console.log("🔐 Fortress-Schutz aktiv");
+        injectNoCacheMeta();
+        blockFrameUsage();
+    }
+
+    // Add function to set a cookie with user's consent
+    const setCookie = (name, value, days) => {
+        let expires = "";
+        if (days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = "; expires=" + date.toUTCString();
+        }
+        document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+    };
+
+    // Show cookie consent banner
+    const showCookieBanner = () => {
+        const banner = document.createElement("div");
+        banner.className = "cookie-banner";
+        banner.innerHTML = `
+            <div>
+                🍪 Diese Website verwendet Cookies für Technik & – mit Zustimmung – Google Analytics.
+            </div>
+            <div>
+                <button class="cookie-accept">Zustimmen</button>
+                <button class="cookie-decline">Ablehnen</button>
+            </div>
+        `;
+        document.body.appendChild(banner);
+        
+        banner.querySelector(".cookie-accept").addEventListener("click", () => {
+            setCookie("cookieConsent", "accepted", 365);
+            banner.remove();
+            loadAnalytics();
+        });
+
+        banner.querySelector(".cookie-decline").addEventListener("click", () => {
+            setCookie("cookieConsent", "declined", 365);
+            banner.remove();
+            console.log("🚫 Analytics abgelehnt");
+        });
+    };
+
+    // Load Analytics if cookies are accepted
+    const loadAnalytics = () => {
+        console.log("📊 Lade Google Analytics...");
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-JYCZLWZZVD'; // Deine GA-ID
+        document.head.appendChild(script);
+
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-JYCZLWZZVD'); // GA-ID auch hier
+
+        console.log("✅ Google Analytics aktiviert");
+    };
+
+    const cookieConsent = document.cookie.split('; ').find(row => row.startsWith('cookieConsent='));
+    if (cookieConsent && cookieConsent.split('=')[1] === "accepted") {
+        loadAnalytics();
+    } else {
+        showCookieBanner();
+    }
+}
