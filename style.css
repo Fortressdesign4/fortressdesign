@@ -3,4 +3,9 @@
 }
 #root .top{
   background-color:rgb(18,18,18);
+{
+#root #header {
+    background-image: url('https://github.com/Fortressdesign4/fortressdesign/raw/main/bg.png');
+    background-size: cover; /* Adjust as needed */
+    background-position: center; /* Adjust as needed */
 }
