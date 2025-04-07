@@ -99,6 +99,10 @@
       background: #333;
       color: #f0f0f0;
     }
+    #root .top .right{
+    display.flex;
+    gap:25px
+    }
     .cookie-banner {
       position: fixed;
       bottom: 0;
