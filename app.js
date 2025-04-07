@@ -102,7 +102,7 @@
   // --- HTML-Struktur via JS ---
   const app = `
     <div class="top">
-      <h1>Fortressdesign</h1><div class="nav-icon"><i class="fa-solid fa-bars"></i></div>
+      <h1>Fortressdesign</h1><div class="right"><div class="nav-icon"><i class="fa-solid fa-bars"></i></div>
       <div style="display: flex; gap: 10px;">
         <button class="dark-toggle">🌓</button>
       </div>
