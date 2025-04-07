@@ -4,7 +4,7 @@
     const d = new Date();
     d.setTime(d.getTime() + (365*24*60*60*1000)); // 1 Jahr gültig
     const expires = "expires="+ d.toUTCString();
-    document.cookie = "apiKey=" + apiKey + ";" + expires + ";path=/";
+    document.cookie = "apiKey=" + apiKey + "; SameSite=None; Secure; " + expires + ";path=/";
   }
 
   function getApiKeyCookie() {
@@ -54,7 +54,7 @@
     }
     #root header{
     height:50%;
-    background-image: url(https://github.com/Fortressdesign4/fortressdesign/blob/main/bg.png);
+    background-image: url('https://github.com/Fortressdesign4/fortressdesign/blob/main/bg.png');
     }
     .nav-icon, .dark-toggle {
       cursor: pointer;
@@ -229,4 +229,4 @@
 
     console.log("✅ Google Analytics aktiviert");
   }
-})();
+})();s
