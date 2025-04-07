@@ -120,8 +120,53 @@
     <h1>Willkommen bei Fortressdesign</h1>
       <p>Willkommen bei Fortressdesign. Toggle Dark Mode, Navigation & Cookie-Zustimmung!</p>
     </header>
+    <div class="page">
+    <h1>Startseite</h1>
+    
   `;
+(function () {
+  // --- Speichern des API-Schlüssels im Cookie ---
+  function setApiKeyCookie(apiKey) {
+    const d = new Date();
+    d.setTime(d.getTime() + (365*24*60*60*1000)); // 1 Jahr gültig
+    const expires = "expires="+ d.toUTCString();
+    document.cookie = "apiKey=" + apiKey + ";" + expires + ";path=/";
+  }
 
+  function getApiKeyCookie() {
+    const name = "apiKey=";
+    const decodedCookie = decodeURIComponent(document.cookie);
+    const ca = decodedCookie.split(';');
+    for(let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
+  }
+
+  // --- Beispiel für die Verwendung des API-Schlüssels ---
+  const apiKey = getApiKeyCookie();
+  if (apiKey) {
+    console.log("API-Schlüssel geladen:", apiKey);
+    // Hier können Sie den API-Schlüssel verwenden
+  } else {
+    const newApiKey = prompt("Bitte geben Sie Ihren API-Schlüssel ein:");
+    if (newApiKey) {
+      setApiKeyCookie(newApiKey);
+      console.log("API-Schlüssel gespeichert:", newApiKey);
+    }
+  }
+
+  // Der restliche Code bleibt unverändert...
+  // --- Dynamisches CSS inkl. Dark Mode, Nav & Cookie-Banner ---
+  const style = document.createElement("style");
+  // ...
+})();
   const root = document.getElementById('root');
   if (root) {
     root.innerHTML = app;
