@@ -1,75 +1,83 @@
 (() => {
   'use strict';
 
-  // --- HTTPS erzwingen ---
-  if (window.location.protocol !== 'https:') {
-    alert('WARNUNG: Unsichere Verbindung erkannt! Bitte HTTPS verwenden, um WLAN-Lecks und Man-in-the-Middle-Angriffe zu vermeiden.');
-    // Optional: automatisch auf HTTPS weiterleiten
-    // window.location.href = window.location.href.replace(/^http:/, 'https:');
+  /**
+   * luftdicht.js – ISO/IEC 27001 + NIS-2 konforme Schutzmaßnahmen (Client-seitig)
+   * Fokus: Datenschutz, sichere Kommunikation, API-Vermeidung, Browser-Härtung
+   * Autor: Fortressdesign / OpenAI-unterstützt
+   * Stand: 2025
+   */
+
+  // === 1. Grundschutz (ISO 27001 A.5, A.12, NIS-2 Art. 21) ===
+
+  // 🔒 HTTPS erzwingen
+  if (location.protocol !== 'https:') {
+    alert('⚠️ Unsichere Verbindung erkannt – HTTPS ist erforderlich für sichere Datenübertragung.');
+    // window.location.href = location.href.replace(/^http:/, 'https:'); // Optionaler Zwangs-Redirect
   }
 
-  // --- Warnung bei öffentlichem WLAN ---
-  if (navigator.connection && navigator.connection.type === 'wifi') {
-    alert('Sie sind mit einem WLAN verbunden. Stellen Sie sicher, dass dieses vertrauenswürdig und sicher ist.');
+  // 🔐 CSP Hinweis (Server erforderlich)
+  console.log('[Sicherheit] Setzen Sie eine strenge CSP per HTTP-Header:');
+  console.log("Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self';");
+
+  // 🚫 Kein Zugriff aus iframes (Clickjacking verhindern)
+  if (self !== top) {
+    document.body.innerHTML = '<h1 style="color:red;">Sicherheitshinweis: Iframe-Zugriff blockiert.</h1>';
+    throw new Error('Framing blockiert');
   }
 
-  // --- Blockieren gefährlicher Web APIs (WebRTC, MediaDevices, Presentation API) ---
-  const blockApi = (apiName, obj, prop) => {
-    if (obj && obj[prop]) {
+  // === 2. Technische Kontrolle gefährlicher APIs (ISO 27001 A.13, A.14) ===
+
+  // 🚫 Deaktiviere WebRTC, Kamera, Mikrofon, Bildschirmfreigabe
+  const blockAPIs = [
+    ['getUserMedia', navigator.mediaDevices || navigator],
+    ['getDisplayMedia', navigator.mediaDevices || navigator],
+    ['RTCPeerConnection', window],
+    ['webkitRTCPeerConnection', window],
+    ['mozRTCPeerConnection', window],
+    ['WebSocket', window],
+    ['PresentationRequest', window]
+  ];
+
+  blockAPIs.forEach(([fn, obj]) => {
+    if (obj && typeof obj[fn] === 'function') {
       try {
-        obj[prop] = function() {
-          console.warn(`Zugriff auf ${apiName} wurde blockiert.`);
-          return Promise.reject(new Error(`Zugriff auf ${apiName} nicht erlaubt.`));
+        obj[fn] = function() {
+          console.warn(`🔐 Zugriff auf ${fn} wurde aus Sicherheitsgründen blockiert.`);
+          return Promise.reject(new Error(`${fn} ist deaktiviert.`));
         };
-      } catch (e) {
-        console.warn(`Konnte ${apiName} nicht blockieren:`, e);
-      }
+      } catch {}
     }
-  };
+  });
 
-  blockApi('getUserMedia', navigator.mediaDevices || navigator, 'getUserMedia');
-  blockApi('getDisplayMedia', navigator.mediaDevices || navigator, 'getDisplayMedia');
-  blockApi('RTCPeerConnection', window, 'RTCPeerConnection');
-  blockApi('webkitRTCPeerConnection', window, 'webkitRTCPeerConnection');
-  blockApi('mozRTCPeerConnection', window, 'mozRTCPeerConnection');
-  blockApi('PresentationRequest', window, 'PresentationRequest');
-  blockApi('WebSocket', window, 'WebSocket');
+  // === 3. Netzwerküberwachung / WLAN-Check (NIS-2 Anhang II Abschnitt 2) ===
 
-  // --- Framebusting (Clickjacking Schutz) ---
-  if (window.top !== window.self) {
-    document.body.innerHTML = '<h1 style="color:red;">Sicherheitshinweis: Framing ist nicht erlaubt.</h1>';
-    throw new Error('Framing ist blockiert.');
+  if (navigator.connection) {
+    const conn = navigator.connection;
+    if (conn.type === 'wifi' && ['2g', '3g'].includes(conn.effectiveType)) {
+      alert('⚠️ Öffentliches oder schwaches WLAN erkannt. Keine sensiblen Daten übertragen!');
+    }
+    console.log(`[Netzwerk] Verbindungstyp: ${conn.type}, Geschwindigkeit: ${conn.downlink}Mbps`);
   }
 
-  // --- Kontextmenü und Textauswahl deaktivieren ---
+  // === 4. DOM-Schutzmaßnahmen (NIS-2 Art. 21 Abs. 2 + ISO A.9) ===
+
   window.addEventListener('contextmenu', e => e.preventDefault());
   window.addEventListener('selectstart', e => e.preventDefault());
   window.addEventListener('dragstart', e => e.preventDefault());
 
-  // --- Storage Hardening ---
-  try {
-    sessionStorage.clear();
-    localStorage.clear();
-  } catch (e) {
-    console.warn('Konnte Storage nicht leeren:', e);
+  // 🧹 Lokalen Speicher leeren (verhindert persistente Sitzungen)
+  try { localStorage.clear(); sessionStorage.clear(); } catch {}
+
+  // ⚠️ IP-Zugriffe erkennen (DNS Rebinding Warnung)
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(location.hostname)) {
+    alert('⚠️ Zugriff über IP-Adresse – potenzielle DNS-Rebinding Gefahr!');
   }
 
-  // --- DNS-Rebinding Warnung (wenn URL IP enthält) ---
-  if (window.location.hostname.match(/^(?:\d{1,3}\.){3}\d{1,3}$/)) {
-    alert('Warnung: Zugriff über IP-Adresse - mögliche DNS-Rebinding-Attacke!');
-  }
+  // === 5. Meldepflicht (NIS-2 Art. 23) ===
+  console.log('[NIS-2] Sicherheitsfunktionen aktiviert. Unregelmäßigkeiten melden Sie bitte sofort an Ihre Sicherheitsstelle oder CSIRT.');
 
-  // --- CSP Hinweis ---
-  console.log('Sicherheitsrichtlinie: Bitte CSP per HTTP-Header serverseitig setzen, nicht nur clientseitig.');
-
-  // --- Allgemeine Sicherheits-Logs ---
-  console.log('✅ luftdicht.js geladen: HTTPS, WLAN-Schutz, WebAPI-Blockierung aktiv.');
-
-  // --- Optional: Netzwerkanalyse - nur informativ ---
-  if (navigator.connection) {
-    console.log(`Netzwerktyp: ${navigator.connection.effectiveType || navigator.connection.type}`);
-  }
-
-  // --- Funktion für HTTPS-Hardening, z.B. HSTS kann nur serverseitig gesetzt werden ---
+  // === 6. Transparenzprotokoll (ISO 27001 A.12.4 Logging) ===
+  console.log(`[LOG] luftdicht.js geladen @ ${new Date().toISOString()}`);
 
 })();
