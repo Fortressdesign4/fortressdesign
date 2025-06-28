@@ -97,18 +97,18 @@
       border-bottom: 1px solid #444; /* feine Linie unter der Nav */
     }
 
-    #root .nav ul {
+    #root .top .nav ul {
       list-style: none;
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
     }
 
-    #root .nav li {
+    #root .top .nav li {
       padding: 10px 15px;
     }
 
-    #root li a {
+    #root .top li a {
       color: #fff;
       text-decoration: none;
       display: block;
@@ -116,7 +116,7 @@
       transition: color 0.3s ease;
     }
 
-    #root .nav li a:hover,
+    #root .top .nav li a:hover,
     #root .nav li a.active {
       color: lightblue; 
       padding: 0px 15px; /* z.B. DodgerBlue als Highlight */
