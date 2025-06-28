@@ -5,7 +5,7 @@
   background-color:rgb(0,0,18);
 }
 #root .top h1{
-  color:hsl(0,0,100%);
+  color:#fff;
 }
 #root .top {
   display: flex;
