@@ -1,123 +1,144 @@
+// iso27001-firewall.js
 (() => {
+  'use strict';
+
   const blockedProtocols = ['javascript:', 'data:', 'ftp:', 'file:', 'blob:', 'ws:', 'wss:'];
   const eventLog = [];
 
   function hasPortInRange(url) {
     try {
       const u = new URL(url, location.href);
+      if (!u.port) return false;
       const portNum = Number(u.port);
-      return u.port && portNum >= 0 && portNum <= 65535;
-    } catch { return false; }
+      return portNum >= 0 && portNum <= 65535;
+    } catch {
+      return false;
+    }
   }
 
   function isIPv6Url(url) {
     try {
       return /\[[0-9a-fA-F:]+\]/.test(new URL(url, location.href).hostname);
-    } catch { return false; }
+    } catch {
+      return false;
+    }
   }
 
   function logEvent(type, message, meta = {}) {
-    const entry = { timestamp: new Date().toISOString(), type, message, meta };
+    const entry = {
+      timestamp: new Date().toISOString(),
+      type,
+      message,
+      meta
+    };
     eventLog.push(entry);
-    console.warn(`[Firewall] ${type.toUpperCase()}: ${message}`, meta);
-    // Optional: send to server
-    // navigator.sendBeacon('/log/firewall', JSON.stringify(entry));
+    console.log(`[ISO27001 Firewall] ${type.toUpperCase()}: ${message}`, meta);
   }
 
-  document.addEventListener("click", function (e) {
-    const link = e.target.closest("a");
+  // Link-Klick-Blocker
+  document.addEventListener('click', e => {
+    const link = e.target.closest('a');
     if (link?.href) {
-      const proto = new URL(link.href).protocol;
-      if (blockedProtocols.includes(proto) || hasPortInRange(link.href) || isIPv6Url(link.href)) {
-        e.preventDefault();
-        logEvent("block", "Geblockter Link", { href: link.href });
-        alert("⚠️ Zugriff blockiert.");
-      }
+      try {
+        const proto = new URL(link.href).protocol;
+        if (blockedProtocols.includes(proto) || hasPortInRange(link.href) || isIPv6Url(link.href)) {
+          e.preventDefault();
+          logEvent('block', 'Link mit unsicherer URL blockiert', { href: link.href });
+          alert('⚠️ Zugriff auf unsichere Ressource blockiert.');
+        }
+      } catch {}
     }
   });
 
-  window.eval = function () {
-    logEvent("violation", "eval() blockiert");
-    throw new Error("eval() ist deaktiviert.");
+  // eval & Function verbieten
+  window.eval = () => {
+    logEvent('violation', 'Versuch, eval() auszuführen');
+    throw new Error('eval() ist aus Sicherheitsgründen deaktiviert.');
+  };
+  window.Function = () => {
+    logEvent('violation', 'Versuch, Function() zu erstellen');
+    throw new Error('Function() ist aus Sicherheitsgründen blockiert.');
   };
 
-  window.Function = function () {
-    logEvent("violation", "Function() blockiert");
-    throw new Error("Function() ist deaktiviert.");
-  };
-
-  const observer = new MutationObserver(m => {
-    m.forEach(({ addedNodes }) => {
-      addedNodes.forEach(n => {
-        if (n.nodeName === 'SCRIPT' || n.textContent?.includes('eval')) {
-          logEvent("alert", "Dynamisches Skript eingefügt", { node: n });
+  // MutationObserver für dynamisch eingefügte Skripte
+  new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+      mutation.addedNodes.forEach(node => {
+        if (node.nodeName === 'SCRIPT' || (node.textContent && node.textContent.includes('eval'))) {
+          logEvent('alert', 'Verdächtiges Skript dynamisch eingefügt', { node });
         }
       });
     });
-  });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  }).observe(document.documentElement, { childList: true, subtree: true });
 
-  const origFetch = window.fetch;
+  // fetch blockieren
+  const originalFetch = window.fetch;
   window.fetch = function (...args) {
     const url = args[0];
     try {
       const proto = new URL(url, location.href).protocol;
       if (blockedProtocols.includes(proto) || hasPortInRange(url) || isIPv6Url(url)) {
-        logEvent("block", "fetch blockiert", { url });
-        return Promise.reject("Geblockt durch Firewall");
+        logEvent('block', 'fetch() Aufruf zu unsicherer URL blockiert', { url });
+        return Promise.reject('Firewall blockiert fetch() zu unsicherer URL');
       }
     } catch {}
-    return origFetch(...args);
+    return originalFetch(...args);
   };
 
-  const origXHR = window.XMLHttpRequest;
+  // XMLHttpRequest blockieren
+  const OriginalXHR = window.XMLHttpRequest;
   window.XMLHttpRequest = function () {
-    const xhr = new origXHR();
-    const open = xhr.open;
+    const xhr = new OriginalXHR();
+    const origOpen = xhr.open;
     xhr.open = function (method, url, ...rest) {
       try {
         const proto = new URL(url, location.href).protocol;
         if (blockedProtocols.includes(proto) || hasPortInRange(url) || isIPv6Url(url)) {
-          logEvent("block", "XHR blockiert", { url });
-          throw new Error("XHR geblockt");
+          logEvent('block', 'XMLHttpRequest zu unsicherer URL blockiert', { url });
+          throw new Error('Firewall blockiert XMLHttpRequest zu unsicherer URL');
         }
       } catch {}
-      return open.call(xhr, method, url, ...rest);
+      return origOpen.call(xhr, method, url, ...rest);
     };
     return xhr;
   };
 
+  // WebSocket komplett blockieren
   window.WebSocket = function (url, ...args) {
-    logEvent("block", "WebSocket blockiert", { url });
-    throw new Error("WebSocket deaktiviert");
+    logEvent('block', 'WebSocket-Verbindung blockiert', { url });
+    throw new Error('WebSocket sind aus Sicherheitsgründen deaktiviert.');
   };
 
+  // WebRTC blockieren
   if (window.RTCPeerConnection) {
     window.RTCPeerConnection = function () {
-      logEvent("block", "WebRTC blockiert");
-      throw new Error("WebRTC deaktiviert");
+      logEvent('block', 'WebRTC-Verbindung blockiert');
+      throw new Error('WebRTC ist aus Sicherheitsgründen deaktiviert.');
     };
   }
 
-  const iframeObs = new MutationObserver(m => {
-    m.forEach(({ addedNodes }) => {
-      addedNodes.forEach(n => {
-        if (n.tagName === "IFRAME" && n.src) {
-          const proto = new URL(n.src, location.href).protocol;
-          if (blockedProtocols.includes(proto) || hasPortInRange(n.src) || isIPv6Url(n.src)) {
-            logEvent("block", "iframe blockiert", { src: n.src });
-            n.remove();
-          }
+  // iframe src blockieren bei unsicheren URLs
+  new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+      mutation.addedNodes.forEach(node => {
+        if (node.tagName === 'IFRAME' && node.src) {
+          try {
+            const proto = new URL(node.src, location.href).protocol;
+            if (blockedProtocols.includes(proto) || hasPortInRange(node.src) || isIPv6Url(node.src)) {
+              logEvent('block', 'iframe mit unsicherer URL blockiert', { src: node.src });
+              node.remove();
+            }
+          } catch {}
         }
       });
     });
-  });
-  iframeObs.observe(document.body, { childList: true, subtree: true });
+  }).observe(document.body, { childList: true, subtree: true });
 
-  logEvent("info", "Firewall geladen (Browser)");
+  logEvent('info', 'ISO27001-konforme Firewall im Browser aktiviert.');
 
-  window.__NIS2_FIREWALL__ = {
+  // API für Log-Ausgabe und Löschung (z.B. Monitoring)
+  window.ISO27001Firewall = {
     getLog: () => [...eventLog],
-    clearLog: () => (eventLog.length = 0),
+    clearLog: () => (eventLog.length = 0)
   };
 })();
