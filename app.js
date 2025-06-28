@@ -68,8 +68,11 @@
       padding: 1em;
       border-bottom: 1px solid #444;
     }
-    .pages .content{
-    display: flex;
+    .pages .content {
+      display: flex;
+      gap: 1em;
+      flex-wrap: wrap;
+      justify-content: center;
     }
     .top h1 {
       font-size: 2rem;
@@ -121,15 +124,31 @@
       ]
     }
   ];
-const leistungen={
-  { name:"webdesign", image: "./images/webdesign.png"}
-  ]
+
+  // Leistungen Array korrekt definiert
+  const leistungen = [
+    { name: "Webdesign", image: "./images/webdesign.png" },
+    { name: "SEO", image: "./images/seo.png" }, 
+    { name: "Marketing", image: "./images/marketing.png" }
+    // add more if you want
+  ];
+
+  // Dynamisch Leistungen in HTML umwandeln
+  function renderLeistungen() {
+    return leistungen.map(l => 
+      `<section class="leistung-item" style="text-align:center; margin: 0 10px;">
+        <img src="${l.image}" alt="${l.name}" style="max-width: 150px; border-radius: 8px;">
+        <h3>${l.name}</h3>
+      </section>`).join('');
+  }
+
   const pageContent = {
-    startseite: `<h2>Willkommen auf der Startseite</h2>
-                 <p>Herzlich Willkommen auf Fortressdesign</p>
-                 <h1>Auszug unserer <span style="color:lightblue">Leistungen</span></h1>
-                 <div class="content">
-                 <section class="webdesign"><img src="./images/webdesign.png" alt="Webdesign"></section>`,
+    startseite: `
+      <h2>Willkommen auf der Startseite</h2>
+      <p>Herzlich Willkommen auf Fortressdesign</p>
+      <h1>Auszug unserer <span style="color:lightblue">Leistungen</span></h1>
+      <div class="content">${renderLeistungen()}</div>
+    `,
     leistungen: '<h2>Unsere Leistungen</h2><p>Beschreibung der Leistungen.</p>',
     referenzen: '<h2>Referenzen</h2><p>Einige Kundenreferenzen.</p>',
     kontakt: '<h2>Kontakt</h2><p>So erreichen Sie uns...</p>'
