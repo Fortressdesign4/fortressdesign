@@ -3,7 +3,7 @@
 
   /**
    * luftdicht.js – ISO/IEC 27001 + NIS-2 konforme Schutzmaßnahmen (Client-seitig)
-   * Fokus: Datenschutz, sichere Kommunikation, API-Vermeidung, Browser-Härtung
+   * Fokus: Datenschutz, sichere Kommunikation, API-Vermeidung, Browser-Härtung, Session- und Systemschutz
    * Autor: Fortressdesign / OpenAI-unterstützt
    * Stand: 2025
    */
@@ -88,5 +88,52 @@
 
   // === 6. Transparenzprotokoll (ISO 27001 A.12.4 Logging) ===
   console.log(`[LOG] luftdicht.js geladen @ ${new Date().toISOString()}`);
+
+  // === 7. Zusätzliche Systemsicherheit ===
+
+  // 7.1 Session Timeout und automatische Abmeldung nach Inaktivität (10 Minuten)
+  let idleSeconds = 0;
+  const idleLimit = 600; // 600 Sekunden = 10 Minuten
+
+  function resetIdleTimer() {
+    idleSeconds = 0;
+  }
+
+  ['mousemove', 'keydown', 'scroll', 'touchstart'].forEach(evt =>
+    window.addEventListener(evt, resetIdleTimer)
+  );
+
+  setInterval(() => {
+    idleSeconds++;
+    if (idleSeconds >= idleLimit) {
+      alert('⚠️ Sitzung wurde wegen Inaktivität beendet. Bitte melden Sie sich erneut an.');
+      try {
+        sessionStorage.clear();
+        localStorage.clear();
+      } catch {}
+      location.reload();
+    }
+  }, 1000);
+
+  // 7.2 Zeit-Synchronisationsprüfung gegen Manipulation (abweichung > 5 Minuten)
+  const clientTime = Date.now();
+  // Beispiel für Serverzeit (statisch, im echten Einsatz vom Server per API holen)
+  const serverTime = clientTime; // hier nur Platzhalter
+
+  if (Math.abs(clientTime - serverTime) > 5 * 60 * 1000) {
+    alert('⚠️ Systemzeit weicht stark von Serverzeit ab – bitte Systemzeit überprüfen.');
+  }
+
+  // 7.3 Passwort-Policy Hinweis (nur als Hinweis bei Formularen)
+  document.querySelectorAll('input[type=password]').forEach(pwInput => {
+    pwInput.setAttribute('pattern', '(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).{8,}');
+    pwInput.setAttribute('title', 'Passwort muss mindestens 8 Zeichen enthalten, Groß- und Kleinbuchstaben sowie Zahlen.');
+  });
+
+  // 7.4 CSP Violations Monitor (wenn möglich, erfordert serverseitige CSP mit report-uri)
+  window.addEventListener('securitypolicyviolation', e => {
+    console.warn('CSP Verstoß erkannt:', e);
+    // Optional: Melde an Server
+  });
 
 })();
