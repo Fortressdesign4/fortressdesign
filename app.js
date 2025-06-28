@@ -57,6 +57,7 @@
     }
     .nav li a:hover,
     .nav li a.active {
+    transition:0.18ms all easy-out;
       color: lightblue;
       padding: 0 15px;
     }
