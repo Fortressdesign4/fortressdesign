@@ -68,6 +68,9 @@
       padding: 1em;
       border-bottom: 1px solid #444;
     }
+    .pages .content{
+    display: flex;
+    }
     .top h1 {
       font-size: 2rem;
     }
@@ -118,7 +121,9 @@
       ]
     }
   ];
-
+const leistungen={
+  { name:"webdesign", image: "./images/webdesign.png"}
+  ]
   const pageContent = {
     startseite: `<h2>Willkommen auf der Startseite</h2>
                  <p>Herzlich Willkommen auf Fortressdesign</p>
