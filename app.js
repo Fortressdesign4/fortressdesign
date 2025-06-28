@@ -68,5 +68,108 @@
   window.addEventListener('hashchange', () => {
     renderPage(window.location.hash.substring(1).toLowerCase());
   });
+(() => {
+  const styleContent = `
+    /* Reset und Grundstyles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body, html, #root {
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background-color: #000;
+      color: #fff;
+    }
+
+    /* Container */
+    #root {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Navigation */
+    #root .nav {
+      background-color: #111;
+      border-bottom: 1px solid #444; /* feine Linie unter der Nav */
+    }
+
+    #root .nav ul {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    #root .nav li {
+      padding: 10px 15px;
+    }
+
+    #root li a {
+      color: #fff;
+      text-decoration: none;
+      display: block;
+      font-size: 18px;
+      transition: color 0.3s ease;
+    }
+
+    #root .nav li a:hover,
+    #root .nav li a.active {
+      color: lightblue; 
+      padding: 0px 15px; /* z.B. DodgerBlue als Highlight */
+    }
+
+    /* Top Bereich */
+    #root .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1em;
+      border-bottom: 1px solid #444; /* feine Linie unter dem Header */
+    }
+
+    #root .top h1 {
+      font-size: 2rem;
+      color: #fff;
+    }
+
+    /* Seiteninhalt */
+    #root .pages {
+      max-width: calc(100% - 20%);
+      margin: 25px auto;
+      padding: 1em 2em;
+      background-color: #111;
+      border-radius: 8px blue;
+      box-shadow: 2px 2px 18px lightblue;
+      flex-grow: 1;
+    }
+
+    /* Responsive Navigation: Hamburger für kleine Bildschirme */
+    @media (max-width: 600px) {
+      #root .nav ul {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      #root .nav li {
+        padding: 8px 0;
+        width: 100%;
+        text-align: center;
+      }
+
+      #root .top {
+        flex-direction: column;
+        gap: 0.5em;
+      }
+    }
+  `;
+
+  const styleTag = document.createElement('style');
+  styleTag.textContent = styleContent;
+  document.head.appendChild(styleTag);
+})();
 
 })();
