@@ -72,6 +72,7 @@
     }
     .pages {
       max-width: calc(100% - 20%);
+      width:980px;
       margin: 25px auto;
       padding: 1em 2em;
       background: #111;
