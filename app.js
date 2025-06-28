@@ -123,6 +123,7 @@
     startseite: `<h2>Willkommen auf der Startseite</h2>
                  <p>Herzlich Willkommen auf Fortressdesign</p>
                  <h1>Auszug unserer <span style="color:lightblue">Leistungen</span></h1>
+                 <div class="content">
                  <section class="webdesign"><img src="./images/webdesign.png" alt="Webdesign"></section>`,
     leistungen: '<h2>Unsere Leistungen</h2><p>Beschreibung der Leistungen.</p>',
     referenzen: '<h2>Referenzen</h2><p>Einige Kundenreferenzen.</p>',
