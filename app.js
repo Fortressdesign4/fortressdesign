@@ -6,7 +6,8 @@
       nav: [
         { name:"Startseite", href:"?startseite" },
         { name:"Leistungen", href:"?leistungen" },
-        { name:"Referenzen", href:"?referenzen" }
+        { name:"Referenzen", href:"?referenzen" },
+        { name: "kontakt", href:"#kontakt";
       ]
     }
   ];
