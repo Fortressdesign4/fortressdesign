@@ -1,11 +1,41 @@
-(function(){
+(() => {
+  'use strict';
+
+  // Google Fonts per XHR laden und als <style> einfügen
+  const loadGoogleFonts = () => {
+    const url = 'https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap';
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const styleTag = document.createElement('style');
+        styleTag.id = 'poppins-font-style';
+        styleTag.textContent = xhr.responseText;
+        document.head.appendChild(styleTag);
+        console.log('[Fonts] Poppins font CSS loaded and injected.');
+      } else {
+        console.error('[Fonts] Fehler beim Laden der Google Fonts CSS:', xhr.status);
+      }
+    };
+    xhr.onerror = () => {
+      console.error('[Fonts] Netzwerkausfall beim Laden der Google Fonts CSS');
+    };
+    xhr.send();
+  };
+
+  loadGoogleFonts();
+
   const page = [
-    { name: "Fortressdesign", nav:[
-        { name:"Startseite", href:"#startseite", key:"startseite" },
-        { name:"Leistungen", href:"#leistungen", key:"leistungen" },
-        { name:"Referenzen", href:"#referenzen", key:"referenzen" },
-        { name:"Kontakt", href:"#kontakt", key:"kontakt" }
-    ]}
+    {
+      name: "Fortressdesign",
+      nav: [
+        { name: "Startseite", href: "#startseite", class: "startseite" },
+        { name: "Leistungen", href: "#leistungen", class: "leistungen" },
+        { name: "Referenzen", href: "#referenzen", class: "referenzen" },
+        { name: "Kontakt", href: "#kontakt", class: "kontakt" }
+      ]
+    }
   ];
 
   const pageContent = {
@@ -17,12 +47,12 @@
 
   const app = document.getElementById('root');
 
-  // Navigation bauen
-  let navHtml = '<nav class="nav">';
+  // Navigation HTML bauen
+  let navHtml = '<nav class="nav"><ul>';
   page[0].nav.forEach(item => {
-    navHtml += `<a href="${item.href}" data-key="${item.key}" class="mi">${item.name}</a>`;
+    navHtml += `<li><a href="${item.href}" id="nav-${item.class}">${item.name}</a></li>`;
   });
-  navHtml += '</nav>';
+  navHtml += '</ul></nav>';
 
   // Grundstruktur setzen
   app.innerHTML = `
@@ -34,15 +64,19 @@
   `;
 
   const pagesContainer = app.querySelector('.pages');
-  const navLinks = app.querySelectorAll('.nav a.mi');
+  const navLinks = app.querySelectorAll('.nav a');
 
-  function renderPage(key){
-    if (!key || !pageContent[key]) key = 'startseite';
-    pagesContainer.innerHTML = pageContent[key];
+  function renderPage() {
+    let hash = window.location.hash.substring(1).toLowerCase();
+    if (!hash || !pageContent[hash]) hash = 'startseite';
 
-    // Aktiven Link markieren
+    // Inhalt und Klasse setzen
+    pagesContainer.innerHTML = pageContent[hash];
+    pagesContainer.className = 'pages ' + hash;
+
+    // Aktiven Nav-Link markieren
     navLinks.forEach(link => {
-      if (link.dataset.key === key) {
+      if (link.getAttribute('href') === '#' + hash) {
         link.classList.add('active');
       } else {
         link.classList.remove('active');
@@ -50,126 +84,7 @@
     });
   }
 
-  // Klick-Event für alle .mi Links
-  navLinks.forEach(link => {
-    link.addEventListener('click', e => {
-      e.preventDefault();
-      const key = e.currentTarget.dataset.key;
-      // Seite rendern ohne URL Hash zu ändern
-      renderPage(key);
-    });
-  });
-
-  // Optional: Seite mit URL-Hash laden (initial)
-  let initialKey = window.location.hash.substring(1).toLowerCase();
-  renderPage(initialKey);
-
-  // Optional: Auch auf Hash-Änderung reagieren
-  window.addEventListener('hashchange', () => {
-    renderPage(window.location.hash.substring(1).toLowerCase());
-  });
-(() => {
-  const styleContent = `
-    /* Reset und Grundstyles */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body, html, #root {
-      height: 100%;
-      font-family: Arial, sans-serif;
-      background-color: #000;
-      color: #fff;
-    }
-
-    /* Container */
-    #root {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* Navigation */
-    #root .nav {
-      background-color: #111;
-      border-bottom: 1px solid #444; /* feine Linie unter der Nav */
-    }
-
-    #root .top .nav ul {
-      list-style: none;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    #root .top .nav li {
-      padding: 10px 15px;
-    }
-
-    #root .top li a {
-      color: #fff;
-      text-decoration: none;
-      display: block;
-      font-size: 18px;
-      transition: color 0.3s ease;
-    }
-
-    #root .top .nav li a:hover,
-    #root .nav li a.active {
-      color: lightblue; 
-      padding: 0px 15px; /* z.B. DodgerBlue als Highlight */
-    }
-
-    /* Top Bereich */
-    #root .top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1em;
-      border-bottom: 1px solid #444; /* feine Linie unter dem Header */
-    }
-
-    #root .top h1 {
-      font-size: 2rem;
-      color: #fff;
-    }
-
-    /* Seiteninhalt */
-    #root .pages {
-      max-width: calc(100% - 20%);
-      margin: 25px auto;
-      padding: 1em 2em;
-      background-color: #111;
-      border-radius: 8px blue;
-      box-shadow: 2px 2px 18px lightblue;
-      flex-grow: 1;
-    }
-
-    /* Responsive Navigation: Hamburger für kleine Bildschirme */
-    @media (max-width: 600px) {
-      #root .nav ul {
-        flex-direction: column;
-        align-items: center;
-      }
-
-      #root .nav li {
-        padding: 8px 0;
-        width: 100%;
-        text-align: center;
-      }
-
-      #root .top {
-        flex-direction: column;
-        gap: 0.5em;
-      }
-    }
-  `;
-
-  const styleTag = document.createElement('style');
-  styleTag.textContent = styleContent;
-  document.head.appendChild(styleTag);
-})();
+  renderPage();
+  window.addEventListener('hashchange', renderPage);
 
 })();
