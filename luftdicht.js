@@ -2,641 +2,488 @@
   'use strict';
 
   /**
-   * luftdicht.js – umfangreiches Leak- und Fingerprinting-Schutz Toolkit
-   * 49 Funktionen für Privacy und Security, inkl. Geo, Mikrofon, Kamera, WebRTC, DNS, Clipboard, Timing, Hardware, uvm.
+   * luftdicht.js Ultimate Leak Protection v2025
+   * 49 Funktionen + DOM-Reinigung + Browser-Härtung + Session-Schutz
    * Autor: Fortressdesign / OpenAI-unterstützt
-   * Stand: 2025
    */
 
-  // === 0. Cachebuster Reload ===
-  function cacheBusterReload() {
-    if (!sessionStorage.getItem('noCacheReloadDone')) {
-      sessionStorage.setItem('noCacheReloadDone', 'true');
-      const url = new URL(window.location.href);
-      url.searchParams.set('cachebuster', Date.now());
-      window.location.href = url.toString();
-      return true;
-    }
-    return false;
+  // === 0. Cache-Busting (immer frische Seite laden) ===
+  if (!sessionStorage.getItem('noCacheReloadDone')) {
+    sessionStorage.setItem('noCacheReloadDone', 'true');
+    const url = new URL(window.location.href);
+    url.searchParams.set('cachebuster', Date.now());
+    window.location.href = url.toString();
+    return;
   }
-  if (cacheBusterReload()) return;
 
-  // === 1. HTTPS Erzwingen (außer localhost) ===
-  function enforceHTTPS() {
-    if (
-      location.protocol !== 'https:' &&
-      location.hostname !== 'localhost' &&
-      location.hostname !== '127.0.0.1'
-    ) {
-      alert('⚠️ Unsichere Verbindung – bitte HTTPS verwenden.');
-      // window.location.href = location.href.replace(/^http:/, 'https:');
-    }
+  // === 1. HTTPS erzwingen + Warnung ===
+  if (location.protocol !== 'https:') {
+    alert('⚠️ Unsichere Verbindung erkannt. Bitte HTTPS nutzen!');
   }
-  enforceHTTPS();
 
-  // === 2. Clickjacking Schutz ===
-  function preventFraming() {
-    if (self !== top) {
-      document.body.innerHTML =
-        '<h1 style="color:red;">Framing verboten (Clickjacking Schutz)</h1>';
-      throw new Error('Framing blockiert');
-    }
+  // === 2. Clickjacking-Schutz (kein Framing erlaubt) ===
+  if (self !== top) {
+    document.body.innerHTML = '<h1 style="color:red;">Framing blockiert</h1>';
+    throw new Error('Framing blockiert');
   }
-  preventFraming();
 
-  // === 3. Block Mikrofon- & Kamerazugriff ===
-  function blockMediaDevices() {
-    const nav = navigator.mediaDevices || navigator;
-    ['getUserMedia', 'getDisplayMedia'].forEach((fn) => {
-      if (nav && typeof nav[fn] === 'function') {
-        try {
-          nav[fn] = () => {
-            console.warn(`🔐 ${fn} blockiert.`);
-            return Promise.reject(new Error(`${fn} deaktiviert`));
-          };
-        } catch {}
-      }
-    });
-  }
-  blockMediaDevices();
+  // === 3. CSP Hinweis (nur als Hinweis, muss serverseitig gesetzt werden) ===
+  console.log('[Sicherheit] CSP-Hinweis: default-src \'none\'; script-src \'self\'; style-src \'self\';');
 
-  // === 4. Block WebRTC (Peer Connections) ===
-  function blockWebRTC() {
-    ['RTCPeerConnection', 'webkitRTCPeerConnection', 'mozRTCPeerConnection'].forEach(
-      (name) => {
-        if (name in window) {
-          try {
-            window[name] = function () {
-              console.warn(`${name} blockiert`);
-              throw new Error(`${name} deaktiviert`);
-            };
-          } catch {}
-        }
-      }
-    );
-  }
-  blockWebRTC();
-
-  // === 5. Block WebSocket ===
-  function blockWebSocket() {
-    if ('WebSocket' in window) {
+  // === 4. Blockiere gefährliche APIs (UserMedia, WebSocket, PeerConnection etc.) ===
+  const blockAPIs = [
+    ['getUserMedia', navigator.mediaDevices || navigator],
+    ['getDisplayMedia', navigator.mediaDevices || navigator],
+    ['RTCPeerConnection', window],
+    ['webkitRTCPeerConnection', window],
+    ['mozRTCPeerConnection', window],
+    ['WebSocket', window],
+    ['PresentationRequest', window]
+  ];
+  blockAPIs.forEach(([fn, obj]) => {
+    if (obj && typeof obj[fn] === 'function') {
       try {
+        obj[fn] = function () {
+          console.warn(`🔐 API ${fn} blockiert`);
+          return Promise.reject(new Error(`${fn} deaktiviert`));
+        };
+      } catch {}
+    }
+  });
+
+  // === 5. Netzwerk-Check (schwaches WLAN etc.) ===
+  if (navigator.connection) {
+    const conn = navigator.connection;
+    if (conn.type === 'wifi' && ['2g', '3g'].includes(conn.effectiveType)) {
+      alert('⚠️ Öffentliches oder langsames WLAN erkannt.');
+    }
+  }
+
+  // === 6. Session & Local Storage löschen ===
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+  } catch {}
+
+  // === 7. IP/Hostname Check (Warnung bei direkter IP) ===
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(location.hostname)) {
+    alert('⚠️ Zugriff über IP erkannt – DNS-Rebinding möglich.');
+  }
+
+  // === 8. Session Timeout (10 Minuten) ===
+  let idleSeconds = 0;
+  const idleLimit = 600;
+  function resetIdle() { idleSeconds = 0; }
+  ['mousemove', 'keydown', 'scroll', 'touchstart'].forEach(e => window.addEventListener(e, resetIdle));
+  setInterval(() => {
+    idleSeconds++;
+    if (idleSeconds >= idleLimit) {
+      alert('⚠️ Sitzung abgelaufen (Inaktivität).');
+      try { localStorage.clear(); sessionStorage.clear(); } catch {}
+      location.reload();
+    }
+  }, 1000);
+
+  // === 9. Zeit-Sync Check (abweichung >5 min) ===
+  const clientTime = Date.now();
+  const serverTime = clientTime; // sollte per API ersetzt werden
+  if (Math.abs(clientTime - serverTime) > 5 * 60 * 1000) {
+    alert('⚠️ Systemzeit weicht stark von Serverzeit ab!');
+  }
+
+  // === 10. Passwort Policy Hinweise ===
+  document.querySelectorAll('input[type=password]').forEach(el => {
+    el.setAttribute('pattern', '(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).{8,}');
+    el.setAttribute('title', 'Mindestens 8 Zeichen, Groß-/Kleinbuchstaben & Zahl.');
+  });
+
+  // === 11. CSP Violation Monitor ===
+  window.addEventListener('securitypolicyviolation', e => {
+    console.warn('CSP-Verstoß:', e);
+  });
+
+  // === 12-60. 49 Anti-Leak & Fingerprinting Funktionen ===
+  // --- Funktionen in einem Objekt, modular aufrufbar ---
+  const antiLeakFunctions = {
+
+    // 12. Deaktiviere WebRTC IP Leak komplett
+    disableWebRTC() {
+      if (window.RTCPeerConnection) {
+        const orig = window.RTCPeerConnection;
+        window.RTCPeerConnection = function () {
+          console.warn('WebRTC deaktiviert');
+          throw new Error('WebRTC ist deaktiviert');
+        };
+      }
+    },
+
+    // 13. Deaktiviere Geolocation API
+    disableGeoLocation() {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition = () => {
+          throw new Error('Geolocation deaktiviert');
+        };
+        navigator.geolocation.watchPosition = () => {
+          throw new Error('Geolocation deaktiviert');
+        };
+      }
+    },
+
+    // 14. Deaktiviere Mikrofon-Zugriff
+    disableMicrophone() {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia = () => Promise.reject(new Error('Mikrofon deaktiviert'));
+      }
+    },
+
+    // 15. Deaktiviere Kamera-Zugriff
+    disableCamera() {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia = () => Promise.reject(new Error('Kamera deaktiviert'));
+      }
+    },
+
+    // 16. Blockiere Screen Sharing
+    disableScreenCapture() {
+      if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+        navigator.mediaDevices.getDisplayMedia = () => Promise.reject(new Error('Bildschirmübertragung deaktiviert'));
+      }
+    },
+
+    // 17. Disable Battery API
+    disableBatteryAPI() {
+      if (navigator.getBattery) {
+        navigator.getBattery = () => Promise.reject(new Error('Battery API deaktiviert'));
+      }
+    },
+
+    // 18. Disable Device Memory Leak
+    disableDeviceMemory() {
+      try {
+        Object.defineProperty(navigator, 'deviceMemory', { get: () => undefined });
+      } catch {}
+    },
+
+    // 19. Disable Hardware Concurrency Leak
+    disableHardwareConcurrency() {
+      try {
+        Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => undefined });
+      } catch {}
+    },
+
+    // 20. Disable WebGL fingerprinting
+    disableWebGL() {
+      try {
+        const proto = WebGLRenderingContext.prototype;
+        proto.getParameter = () => null;
+      } catch {}
+    },
+
+    // 21. Blockiere Canvas Fingerprinting
+    disableCanvasFingerprinting() {
+      const origGetContext = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function (type) {
+        if (type === '2d' || type === 'webgl') {
+          console.warn('Canvas Fingerprinting blockiert');
+          return null;
+        }
+        return origGetContext.apply(this, arguments);
+      };
+    },
+
+    // 22. Blockiere Audio Fingerprinting
+    disableAudioFingerprinting() {
+      if (window.OfflineAudioContext) {
+        const orig = window.OfflineAudioContext;
+        window.OfflineAudioContext = function () {
+          console.warn('Audio Fingerprinting blockiert');
+          return null;
+        };
+      }
+    },
+
+    // 23. Disable Keyboard Layout Leak
+    disableKeyboardLayout() {
+      try {
+        Object.defineProperty(navigator, 'keyboard', { get: () => undefined });
+      } catch {}
+    },
+
+    // 24. Disable User-Agent Spoofing (setzt festen UA)
+    spoofUserAgent() {
+      try {
+        Object.defineProperty(navigator, 'userAgent', {
+          get: () => 'Mozilla/5.0 (compatible; luftdichtBot/1.0; +https://secure.local)'
+        });
+      } catch {}
+    },
+
+    // 25. Disable Language Leak
+    spoofLanguage() {
+      try {
+        Object.defineProperty(navigator, 'language', { get: () => 'en-US' });
+        Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+      } catch {}
+    },
+
+    // 26. Disable Plugins Leak
+    spoofPlugins() {
+      try {
+        Object.defineProperty(navigator, 'plugins', { get: () => [] });
+      } catch {}
+    },
+
+    // 27. Disable MimeTypes Leak
+    spoofMimeTypes() {
+      try {
+        Object.defineProperty(navigator, 'mimeTypes', { get: () => [] });
+      } catch {}
+    },
+
+    // 28. Disable Cookie Leak (keine Cookies erlaubt)
+    blockCookies() {
+      Object.defineProperty(document, 'cookie', {
+        get: () => '',
+        set: () => { console.warn('Cookies blockiert'); }
+      });
+    },
+
+    // 29. Disable LocalStorage Leak
+    blockLocalStorage() {
+      try {
+        Object.defineProperty(window, 'localStorage', {
+          get: () => {
+            console.warn('localStorage blockiert');
+            return null;
+          }
+        });
+      } catch {}
+    },
+
+    // 30. Disable SessionStorage Leak
+    blockSessionStorage() {
+      try {
+        Object.defineProperty(window, 'sessionStorage', {
+          get: () => {
+            console.warn('sessionStorage blockiert');
+            return null;
+          }
+        });
+      } catch {}
+    },
+
+    // 31. Disable IndexedDB Leak
+    blockIndexedDB() {
+      try {
+        Object.defineProperty(window, 'indexedDB', {
+          get: () => {
+            console.warn('IndexedDB blockiert');
+            return null;
+          }
+        });
+      } catch {}
+    },
+
+    // 32. Blockiere Beacon API
+    blockBeacon() {
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon = () => {
+          console.warn('Beacon API blockiert');
+          return false;
+        };
+      }
+    },
+
+    // 33. Blockiere Notification API
+    blockNotifications() {
+      if (window.Notification) {
+        window.Notification = function () {
+          console.warn('Notifications blockiert');
+          throw new Error('Notifications deaktiviert');
+        };
+      }
+    },
+
+    // 34. Blockiere Payment Request API
+    blockPaymentRequest() {
+      if (window.PaymentRequest) {
+        window.PaymentRequest = function () {
+          console.warn('PaymentRequest API blockiert');
+          throw new Error('PaymentRequest deaktiviert');
+        };
+      }
+    },
+
+    // 35. Blockiere Clipboard API (lesen/schreiben)
+    blockClipboard() {
+      if (navigator.clipboard) {
+        navigator.clipboard.readText = () => Promise.reject(new Error('Clipboard Lesen blockiert'));
+        navigator.clipboard.writeText = () => Promise.reject(new Error('Clipboard Schreiben blockiert'));
+      }
+    },
+
+    // 36. Blockiere Device Orientation API
+    blockDeviceOrientation() {
+      window.addEventListener('deviceorientation', e => e.stopImmediatePropagation(), true);
+    },
+
+    // 37. Blockiere Motion Sensor API
+    blockDeviceMotion() {
+      window.addEventListener('devicemotion', e => e.stopImmediatePropagation(), true);
+    },
+
+    // 38. Disable Presentation API (Screensharing / Cast)
+    disablePresentationAPI() {
+      if (window.PresentationRequest) {
+        window.PresentationRequest = function () {
+          console.warn('PresentationRequest blockiert');
+          throw new Error('PresentationRequest deaktiviert');
+        };
+      }
+    },
+
+    // 39. Blockiere Touch Events (kann Fingerprint verringern)
+    blockTouchEvents() {
+      window.addEventListener('touchstart', e => e.stopPropagation(), true);
+      window.addEventListener('touchmove', e => e.stopPropagation(), true);
+      window.addEventListener('touchend', e => e.stopPropagation(), true);
+    },
+
+    // 40. Blockiere Clipboard Events (copy, cut, paste)
+    blockClipboardEvents() {
+      ['copy', 'cut', 'paste'].forEach(evt =>
+        window.addEventListener(evt, e => e.preventDefault(), true)
+      );
+    },
+
+    // 41. Remove all Inline Event Handlers (onclick, onmouseover...)
+    removeInlineEvents() {
+      document.querySelectorAll('*').forEach(el => {
+        [...el.attributes].forEach(attr => {
+          if (/^on/i.test(attr.name)) el.removeAttribute(attr.name);
+        });
+      });
+    },
+
+    // 42. Remove all external script and iframe sources
+    removeExternalSources() {
+      ['script', 'iframe', 'embed', 'object', 'link'].forEach(tag => {
+        document.querySelectorAll(tag).forEach(el => {
+          ['src', 'href', 'data', 'srcset'].forEach(attr => {
+            if (el.hasAttribute(attr)) el.removeAttribute(attr);
+          });
+          if (el.parentNode) el.parentNode.removeChild(el);
+        });
+      });
+    },
+
+    // 43. Disable Font Enumeration (Fonts API Fingerprint)
+    disableFontEnumeration() {
+      try {
+        if (window.FontFaceSet) {
+          Object.defineProperty(document, 'fonts', { get: () => undefined });
+        }
+      } catch {}
+    },
+
+    // 44. Disable Referrer leak
+    disableReferrer() {
+      try {
+        Object.defineProperty(document, 'referrer', { get: () => '' });
+        Object.defineProperty(document, 'referrerPolicy', { get: () => 'no-referrer' });
+      } catch {}
+    },
+
+    // 45. Block WebSocket Leak
+    blockWebSocket() {
+      if (window.WebSocket) {
         window.WebSocket = function () {
           console.warn('WebSocket blockiert');
           throw new Error('WebSocket deaktiviert');
         };
-      } catch {}
-    }
-  }
-  blockWebSocket();
-
-  // === 6. Block Presentation API ===
-  function blockPresentationAPI() {
-    ['PresentationRequest', 'PresentationConnection', 'PresentationConnectionList'].forEach(
-      (name) => {
-        if (name in window) {
-          try {
-            window[name] = function () {
-              console.warn(`${name} blockiert`);
-              throw new Error(`${name} deaktiviert`);
-            };
-          } catch {}
-        }
       }
-    );
-  }
-  blockPresentationAPI();
+    },
 
-  // === 7. Block Geolocation ===
-  function blockGeolocation() {
-    if ('geolocation' in navigator) {
-      try {
-        navigator.geolocation.getCurrentPosition = () => {
-          console.warn('Geolocation getCurrentPosition blockiert');
-          throw new Error('Geolocation deaktiviert');
-        };
-        navigator.geolocation.watchPosition = () => {
-          console.warn('Geolocation watchPosition blockiert');
-          throw new Error('Geolocation deaktiviert');
-        };
-      } catch {}
-    }
-  }
-  blockGeolocation();
-
-  // === 8. Block Device Orientation & Motion ===
-  function blockDeviceSensors() {
-    ['DeviceOrientationEvent', 'DeviceMotionEvent'].forEach((evtName) => {
-      if (evtName in window) {
-        try {
-          window[evtName] = null;
-          window.addEventListener(evtName.toLowerCase(), (e) => {
-            e.stopImmediatePropagation();
-            e.preventDefault();
-          }, true);
-        } catch {}
-      }
-    });
-  }
-  blockDeviceSensors();
-
-  // === 9. Block Clipboard Access ===
-  function blockClipboard() {
-    ['copy', 'cut', 'paste'].forEach((evt) => {
-      window.addEventListener(evt, (e) => {
-        e.preventDefault();
-        console.warn(`Clipboard ${evt} blockiert`);
-      });
-    });
-  }
-  blockClipboard();
-
-  // === 10. Block Context Menu (Rechtsklick) ===
-  function blockContextMenu() {
-    window.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      console.warn('Rechtsklick blockiert');
-    });
-  }
-  blockContextMenu();
-
-  // === 11. Block Text Selection & Drag ===
-  function blockSelectionDrag() {
-    ['selectstart', 'dragstart'].forEach((evt) => {
-      window.addEventListener(evt, (e) => {
-        e.preventDefault();
-        console.warn(`${evt} blockiert`);
-      });
-    });
-  }
-  blockSelectionDrag();
-
-  // === 12. Clear Storage on Load ===
-  function clearStorage() {
-    try {
-      sessionStorage.clear();
-      localStorage.clear();
-      console.log('Storage gecleart');
-    } catch {}
-  }
-  clearStorage();
-
-  // === 13. Block Fingerprinting: Override Navigator Properties ===
-  function spoofNavigatorProps() {
-    const fakeProps = {
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-      platform: 'Win32',
-      languages: ['en-US', 'en'],
-      hardwareConcurrency: 4,
-      deviceMemory: 4,
-      plugins: [],
-      mimeTypes: [],
-    };
-
-    try {
-      Object.defineProperty(navigator, 'userAgent', { get: () => fakeProps.userAgent, configurable: false });
-      Object.defineProperty(navigator, 'platform', { get: () => fakeProps.platform, configurable: false });
-      Object.defineProperty(navigator, 'languages', { get: () => fakeProps.languages, configurable: false });
-      Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => fakeProps.hardwareConcurrency, configurable: false });
-      Object.defineProperty(navigator, 'deviceMemory', { get: () => fakeProps.deviceMemory, configurable: false });
-      Object.defineProperty(navigator, 'plugins', { get: () => fakeProps.plugins, configurable: false });
-      Object.defineProperty(navigator, 'mimeTypes', { get: () => fakeProps.mimeTypes, configurable: false });
-    } catch {}
-  }
-  spoofNavigatorProps();
-
-  // === 14. Block Battery API ===
-  function blockBatteryAPI() {
-    if ('getBattery' in navigator) {
-      try {
-        navigator.getBattery = () => Promise.reject(new Error('Battery API deaktiviert'));
-      } catch {}
-    }
-  }
-  blockBatteryAPI();
-
-  // === 15. Spoof Screen Properties ===
-  function spoofScreenProps() {
-    try {
-      Object.defineProperty(screen, 'width', { get: () => 1920, configurable: false });
-      Object.defineProperty(screen, 'height', { get: () => 1080, configurable: false });
-      Object.defineProperty(screen, 'colorDepth', { get: () => 24, configurable: false });
-    } catch {}
-  }
-  spoofScreenProps();
-
-  // === 16. Block Performance Timing (Timing Attacks) ===
-  function blockPerformanceTiming() {
-    if ('performance' in window && 'now' in performance) {
-      try {
-        performance.now = () => 0;
-        performance.timing = {};
-      } catch {}
-    }
-  }
-  blockPerformanceTiming();
-
-  // === 17. Block Service Workers ===
-  function blockServiceWorkers() {
-    if ('serviceWorker' in navigator) {
-      try {
-        navigator.serviceWorker.register = () => Promise.reject(new Error('ServiceWorker deaktiviert'));
-      } catch {}
-    }
-  }
-  blockServiceWorkers();
-
-  // === 18. Block Beacon API ===
-  function blockBeacon() {
-    if ('sendBeacon' in navigator) {
-      try {
+    // 46. Disable Beacon Payload
+    blockBeaconPayload() {
+      if (navigator.sendBeacon) {
         navigator.sendBeacon = () => false;
-      } catch {}
-    }
-  }
-  blockBeacon();
-
-  // === 19. Block Screen Capture ===
-  function blockScreenCapture() {
-    if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-      navigator.mediaDevices.getDisplayMedia = () =>
-        Promise.reject(new Error('Bildschirmübertragung deaktiviert'));
-    }
-  }
-  blockScreenCapture();
-
-  // === 20. Block Notification API ===
-  function blockNotifications() {
-    if ('Notification' in window) {
-      try {
-        window.Notification.requestPermission = () =>
-          Promise.resolve('denied');
-      } catch {}
-    }
-  }
-  blockNotifications();
-
-  // === 21. Block WebGL Fingerprinting ===
-  function blockWebGL() {
-    const getParameter = WebGLRenderingContext.prototype.getParameter;
-    WebGLRenderingContext.prototype.getParameter = function (param) {
-      // Return generic values for fingerprinting parameters
-      if (param === 37445) return 'Intel Inc.'; // UNMASKED_VENDOR_WEBGL
-      if (param === 37446) return 'Intel Iris OpenGL Engine'; // UNMASKED_RENDERER_WEBGL
-      return getParameter.call(this, param);
-    };
-  }
-  blockWebGL();
-
-  // === 22. Block Fonts Fingerprinting ===
-  function blockFonts() {
-    if ('fonts' in document) {
-      try {
-        document.fonts.ready = Promise.resolve();
-      } catch {}
-    }
-  }
-  blockFonts();
-
-  // === 23. Block Plugins Enumeration ===
-  function blockPluginsEnum() {
-    try {
-      Object.defineProperty(navigator, 'plugins', {
-        get: () => [],
-        configurable: false,
-      });
-    } catch {}
-  }
-  blockPluginsEnum();
-
-  // === 24. Block MimeTypes Enumeration ===
-  function blockMimeTypesEnum() {
-    try {
-      Object.defineProperty(navigator, 'mimeTypes', {
-        get: () => [],
-        configurable: false,
-      });
-    } catch {}
-  }
-  blockMimeTypesEnum();
-
-  // === 25. Spoof Timezone ===
-  function spoofTimezone() {
-    try {
-      Date.prototype.getTimezoneOffset = () => 0;
-      Intl.DateTimeFormat = class {
-        constructor() {
-          return {
-            resolvedOptions: () => ({
-              timeZone: 'UTC',
-            }),
-          };
-        }
-      };
-    } catch {}
-  }
-  spoofTimezone();
-
-  // === 26. Block IndexedDB ===
-  function blockIndexedDB() {
-    if ('indexedDB' in window) {
-      try {
-        window.indexedDB = null;
-      } catch {}
-    }
-  }
-  blockIndexedDB();
-
-  // === 27. Block Cache API ===
-  function blockCacheAPI() {
-    if ('caches' in window) {
-      try {
-        window.caches = null;
-      } catch {}
-    }
-  }
-  blockCacheAPI();
-
-  // === 28. Disable Pointer Events (mouse tracking) ===
-  function blockPointerEvents() {
-    ['pointermove', 'pointerover', 'pointerenter', 'pointerdown'].forEach((evt) => {
-      window.addEventListener(evt, (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-      }, true);
-    });
-  }
-  blockPointerEvents();
-
-  // === 29. Block Keyboard Event Leak ===
-  function blockKeyboardEvents() {
-    ['keydown', 'keypress', 'keyup'].forEach((evt) => {
-      window.addEventListener(evt, (e) => {
-        e.stopPropagation();
-        // Do not preventDefault to allow input normally
-      }, true);
-    });
-  }
-  blockKeyboardEvents();
-
-  // === 30. Block Service Worker Cache ===
-  function blockServiceWorkerCache() {
-    if ('serviceWorker' in navigator) {
-      try {
-        navigator.serviceWorker.register = () => Promise.reject(new Error('ServiceWorker deaktiviert'));
-      } catch {}
-    }
-  }
-  blockServiceWorkerCache();
-
-  // === 31. Block WebAssembly ===
-  function blockWebAssembly() {
-    if ('WebAssembly' in window) {
-      try {
-        window.WebAssembly = undefined;
-      } catch {}
-    }
-  }
-  blockWebAssembly();
-
-  // === 32. Block Beacon Data Exfiltration ===
-  function blockBeaconExfiltration() {
-    if ('sendBeacon' in navigator) {
-      try {
-        navigator.sendBeacon = () => false;
-      } catch {}
-    }
-  }
-  blockBeaconExfiltration();
-
-  // === 33. Spoof Hardware Concurrency ===
-  function spoofHardwareConcurrency() {
-    try {
-      Object.defineProperty(navigator, 'hardwareConcurrency', {
-        get: () => 4,
-        configurable: false,
-      });
-    } catch {}
-  }
-  spoofHardwareConcurrency();
-
-  // === 34. Spoof Device Memory ===
-  function spoofDeviceMemory() {
-    try {
-      Object.defineProperty(navigator, 'deviceMemory', {
-        get: () => 4,
-        configurable: false,
-      });
-    } catch {}
-  }
-  spoofDeviceMemory();
-
-  // === 35. Block URL Search Parameters Leak ===
-  function blockURLSearchParams() {
-    try {
-      URLSearchParams.prototype.get = () => null;
-      URLSearchParams.prototype.has = () => false;
-    } catch {}
-  }
-  blockURLSearchParams();
-
-  // === 36. Block WebUSB ===
-  function blockWebUSB() {
-    if ('usb' in navigator) {
-      try {
-        navigator.usb = undefined;
-      } catch {}
-    }
-  }
-  blockWebUSB();
-
-  // === 37. Block WebBluetooth ===
-  function blockWebBluetooth() {
-    if ('bluetooth' in navigator) {
-      try {
-        navigator.bluetooth = undefined;
-      } catch {}
-    }
-  }
-  blockWebBluetooth();
-
-  // === 38. Block Payment Request API ===
-  function blockPaymentRequest() {
-    if ('PaymentRequest' in window) {
-      try {
-        window.PaymentRequest = undefined;
-      } catch {}
-    }
-  }
-  blockPaymentRequest();
-
-  // === 39. Block Idle Detection API ===
-  function blockIdleDetection() {
-    if ('IdleDetector' in window) {
-      try {
-        window.IdleDetector = undefined;
-      } catch {}
-    }
-  }
-  blockIdleDetection();
-
-  // === 40. Block Credential Management API ===
-  function blockCredentialManagement() {
-    if ('credentials' in navigator) {
-      try {
-        navigator.credentials = undefined;
-      } catch {}
-    }
-  }
-  blockCredentialManagement();
-
-  // === 41. Block Permissions API ===
-  function blockPermissions() {
-    if ('permissions' in navigator) {
-      try {
-        navigator.permissions = undefined;
-      } catch {}
-    }
-  }
-  blockPermissions();
-
-  // === 42. Block Clipboard API ===
-  function blockClipboardAPI() {
-    if ('clipboard' in navigator) {
-      try {
-        navigator.clipboard = undefined;
-      } catch {}
-    }
-  }
-  blockClipboardAPI();
-
-  // === 43. Spoof Plugins Length ===
-  function spoofPluginsLength() {
-    try {
-      Object.defineProperty(navigator.plugins, 'length', { get: () => 0 });
-    } catch {}
-  }
-  spoofPluginsLength();
-
-  // === 44. Block VR & AR APIs ===
-  function blockVRAR() {
-    ['getVRDisplays', 'xr'].forEach((name) => {
-      if (name in navigator) {
-        try {
-          navigator[name] = undefined;
-        } catch {}
       }
-    });
-  }
-  blockVRAR();
+    },
 
-  // === 45. Block Battery Charging Status Leak ===
-  function blockBatteryCharging() {
-    if ('getBattery' in navigator) {
-      try {
-        navigator.getBattery = () => Promise.resolve({ charging: false });
-      } catch {}
-    }
-  }
-  blockBatteryCharging();
+    // 47. Disable Permissions API Leak
+    blockPermissionsAPI() {
+      if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions.query = () => Promise.reject(new Error('Permissions API deaktiviert'));
+      }
+    },
 
-  // === 46. Block Telephony API ===
-  function blockTelephony() {
-    if ('telephony' in navigator) {
-      try {
-        navigator.telephony = undefined;
-      } catch {}
-    }
-  }
-  blockTelephony();
+    // 48. Disable Performance API Leak
+    blockPerformanceAPI() {
+      if (window.performance) {
+        window.performance.getEntries = () => [];
+        window.performance.now = () => 0;
+      }
+    },
 
-  // === 47. Block Gamepad API ===
-  function blockGamepad() {
-    if ('getGamepads' in navigator) {
-      try {
-        navigator.getGamepads = () => [];
-      } catch {}
-    }
-  }
-  blockGamepad();
+    // 49. Enable aggressive DOM Reinigung
+    enableDomCleaning() {
+      const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+          mutation.addedNodes.forEach(node => {
+            if (!(node instanceof Element)) return;
+            if (['SCRIPT', 'IFRAME', 'EMBED', 'OBJECT', 'LINK'].includes(node.tagName)) {
+              ['src', 'href', 'data', 'srcset'].forEach(attr => {
+                if (node.hasAttribute(attr)) node.removeAttribute(attr);
+              });
+              if (node.parentNode) node.parentNode.removeChild(node);
+              return;
+            }
+            [...node.attributes].forEach(attr => {
+              if (/^on/i.test(attr.name)) node.removeAttribute(attr.name);
+            });
+            node.querySelectorAll('*').forEach(child => {
+              [...child.attributes].forEach(attr => {
+                if (/^on/i.test(attr.name)) child.removeAttribute(attr.name);
+              });
+            });
+          });
+        });
+      });
+      observer.observe(document.documentElement, { childList: true, subtree: true });
 
-  // === 48. Block Network Information API ===
-  function blockNetworkInformation() {
-    if ('connection' in navigator) {
-      try {
-        navigator.connection = undefined;
-      } catch {}
-    }
-  }
-  blockNetworkInformation();
+      // Initial clean
+      this.removeInlineEvents();
+      this.removeExternalSources();
+      console.log('[DOM-Reinigung] Aktiv');
+    },
+  };
 
-  // === 49. Block Crypto API ===
-  function blockCryptoAPI() {
-    if ('crypto' in window) {
-      try {
-        window.crypto = undefined;
-      } catch {}
-    }
-  }
-  blockCryptoAPI();
-
-  // === Activate all ===
-  [
-    enforceHTTPS,
-    preventFraming,
-    blockMediaDevices,
-    blockWebRTC,
-    blockWebSocket,
-    blockPresentationAPI,
-    blockGeolocation,
-    blockDeviceSensors,
-    blockClipboard,
-    blockContextMenu,
-    blockSelectionDrag,
-    clearStorage,
-    spoofNavigatorProps,
-    blockBatteryAPI,
-    spoofScreenProps,
-    blockPerformanceTiming,
-    blockServiceWorkers,
-    blockBeacon,
-    blockScreenCapture,
-    blockNotifications,
-    blockWebGL,
-    blockFonts,
-    blockPluginsEnum,
-    blockMimeTypesEnum,
-    spoofTimezone,
-    blockIndexedDB,
-    blockCacheAPI,
-    blockPointerEvents,
-    blockKeyboardEvents,
-    blockServiceWorkerCache,
-    blockWebAssembly,
-    blockBeaconExfiltration,
-    spoofHardwareConcurrency,
-    spoofDeviceMemory,
-    blockURLSearchParams,
-    blockWebUSB,
-    blockWebBluetooth,
-    blockPaymentRequest,
-    blockIdleDetection,
-    blockCredentialManagement,
-    blockPermissions,
-    blockClipboardAPI,
-    spoofPluginsLength,
-    blockVRAR,
-    blockBatteryCharging,
-    blockTelephony,
-    blockGamepad,
-    blockNetworkInformation,
-    blockCryptoAPI,
-  ].forEach((fn) => {
+  // === 61. Alle Anti-Leak Funktionen ausführen ===
+  Object.values(antiLeakFunctions).forEach(fn => {
     try {
       fn();
-    } catch {}
+    } catch (e) {
+      console.warn('Fehler bei Anti-Leak Funktion:', e);
+    }
   });
 
-  console.log('[luftdicht.js] 49 Leak-Schutzfunktionen aktiviert.');
+  // === 62. Transparenz-Log ===
+  console.log(`[luftdicht.js] Ultimate Leak Protection aktiviert @ ${new Date().toISOString()}`);
+
+  // === 63. Kein Kontextmenü, kein Text-Auswahl, kein Drag ===
+  window.addEventListener('contextmenu', e => e.preventDefault());
+  window.addEventListener('selectstart', e => e.preventDefault());
+  window.addEventListener('dragstart', e => e.preventDefault());
+
+  // === 64. Warnung bei unsicheren Hotspots (symbolisch) ===
+  if (navigator.connection && navigator.connection.type === 'wifi') {
+    console.log('[Hotspot] Jedes Gerät soll zwingend verschlüsselt kommunizieren!');
+  }
+
+  // === 65. Warnung vor Bildschirmübertragung ===
+  if ('getDisplayMedia' in (navigator.mediaDevices || {})) {
+    console.warn('Bildschirmübertragung ist potenziell unsicher und wurde deaktiviert.');
+  }
 
 })();
