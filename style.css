@@ -1,90 +1,92 @@
-/* Basis */
+/* Reset und Grundstyles */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-body, html {
+body, html, #root {
+  height: 100%;
+  font-family: Arial, sans-serif;
   background-color: #000;
   color: #fff;
-  font-family: sans-serif;
-  min-height: 100vh;
 }
 
-/* Layout-Container */
+/* Container */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Navigation */
+#root .nav {
+  background-color: #111;
+}
+
+#root .nav ul {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+#root .nav li {
+  padding: 10px 15px;
+}
+
+#root .nav li a {
+  color: #fff;
+  text-decoration: none;
+  display: block;
+  font-size: 18px;
+  transition: color 0.3s ease;
+}
+
+#root .nav li a:hover,
+#root .nav li a.active {
+  color: #1e90ff; /* z.B. DodgerBlue als Highlight */
+}
+
+/* Top Bereich */
 #root .top {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 1em;
-  border-bottom: 1px solid #333;
-  flex-wrap: wrap;
+  border-bottom: 1px solid #222;
 }
 
-/* Titel */
 #root .top h1 {
-  font-size: 24px;
+  font-size: 2rem;
   color: #fff;
-}
-
-/* Menübutton */
-.menu-toggle {
-  background: none;
-  border: none;
-  color: #fff;
-  font-size: 26px;
-  cursor: pointer;
-  display: none; /* wird bei mobile sichtbar */
-}
-
-/* Navigation */
-#root .nav {
-  display: flex;
-  list-style: none;
-  gap: 1em;
-  flex-wrap: wrap;
-}
-
-#root .nav li a {
-  color: #fff;
-  font-size: 18px;
-  text-decoration: none;
-  transition: color 0.3s;
-}
-
-#root .nav li a:hover,
-#root .nav li a.active {
-  color: #0ff;
 }
 
 /* Seiteninhalt */
 #root .pages {
-  max-width: 89%;
+  max-width: 90%;
   margin: 25px auto;
-  padding: 1em;
+  padding: 1em 2em;
   background-color: #111;
   border-radius: 8px;
+  flex-grow: 1;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .menu-toggle {
-    display: block;
-  }
-
-  .nav {
-    display: none;
+/* Responsive Navigation: Hamburger für kleine Bildschirme */
+@media (max-width: 600px) {
+  #root .nav ul {
     flex-direction: column;
+    align-items: center;
+  }
+
+  #root .nav li {
+    padding: 8px 0;
     width: 100%;
-    margin-top: 10px;
+    text-align: center;
   }
 
-  .nav.show {
-    display: flex;
-  }
-
-  .nav li {
-    padding: 0.5em 1em;
+  #root .top {
+    flex-direction: column;
+    gap: 0.5em;
   }
 }
