@@ -22,6 +22,7 @@ body, html, #root {
 /* Navigation */
 #root .nav {
   background-color: #111;
+  border-bottom: 1px solid #444; /* feine Linie unter der Nav */
 }
 
 #root .nav ul {
@@ -54,7 +55,7 @@ body, html, #root {
   justify-content: space-between;
   align-items: center;
   padding: 1em;
-  border-bottom: 1px solid #222;
+  border-bottom: 1px solid #444; /* feine Linie unter dem Header */
 }
 
 #root .top h1 {
