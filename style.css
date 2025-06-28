@@ -2,7 +2,8 @@
   margin: 0px;
 }
 #root {
-  background-color:#fff;
+  background-color:#fff;;
+  color:#fff;
 }
 #root .top h1{
   color:#fff;
