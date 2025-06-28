@@ -1,35 +1,61 @@
+/* Basis */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
-#root .nav li  a{
-  color:#fff;
-  font-size:18px
-}
-#root {
+
+body, html {
   background-color: #000;
   color: #fff;
   font-family: sans-serif;
   min-height: 100vh;
 }
 
-/* Navigation */
-#root .nav {
-  line-height: 2.5em;
-}
-
-/* Überschrift */
-#root .top h1 {
-  color: #fff;
-}
-
-/* Top-Bereich */
+/* Layout-Container */
 #root .top {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 1em;
+  border-bottom: 1px solid #333;
+  flex-wrap: wrap;
+}
+
+/* Titel */
+#root .top h1 {
+  font-size: 24px;
+  color: #fff;
+}
+
+/* Menübutton */
+.menu-toggle {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 26px;
+  cursor: pointer;
+  display: none; /* wird bei mobile sichtbar */
+}
+
+/* Navigation */
+#root .nav {
+  display: flex;
+  list-style: none;
+  gap: 1em;
+  flex-wrap: wrap;
+}
+
+#root .nav li a {
+  color: #fff;
+  font-size: 18px;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+#root .nav li a:hover,
+#root .nav li a.active {
+  color: #0ff;
 }
 
 /* Seiteninhalt */
@@ -39,4 +65,26 @@
   padding: 1em;
   background-color: #111;
   border-radius: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .menu-toggle {
+    display: block;
+  }
+
+  .nav {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .nav.show {
+    display: flex;
+  }
+
+  .nav li {
+    padding: 0.5em 1em;
+  }
 }
