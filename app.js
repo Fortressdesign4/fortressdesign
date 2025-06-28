@@ -120,7 +120,7 @@
   ];
 
   const pageContent = {
-    startseite: '<h2>Willkommen auf der Startseite</h2><p>Hier ist der Inhalt der Startseite.</p>',
+    startseite: '<h2>Willkommen auf der Startseite</h2><p>Herzlich Willkommen auf Fortressdesign</p><h1>Auszug unserer <span style="color:lightblue">Leistungen</span><section class="webdesign"><img src="./images/webdesign.png'>,
     leistungen: '<h2>Unsere Leistungen</h2><p>Beschreibung der Leistungen.</p>',
     referenzen: '<h2>Referenzen</h2><p>Einige Kundenreferenzen.</p>',
     kontakt: '<h2>Kontakt</h2><p>So erreichen Sie uns...</p>'
