@@ -1,14 +1,13 @@
 (function(){
   const page = [
     { name: "Fortressdesign", nav:[
-        { name:"Startseite", href:"#startseite" },
-        { name:"Leistungen", href:"#leistungen" },
-        { name:"Referenzen", href:"#referenzen" },
-        { name:"Kontakt", href:"#kontakt" }
+        { name:"Startseite", href:"#startseite", key:"startseite" },
+        { name:"Leistungen", href:"#leistungen", key:"leistungen" },
+        { name:"Referenzen", href:"#referenzen", key:"referenzen" },
+        { name:"Kontakt", href:"#kontakt", key:"kontakt" }
     ]}
   ];
 
-  // Inhalte für die Seiten
   const pageContent = {
     startseite: '<h2>Willkommen auf der Startseite</h2><p>Hier ist der Inhalt der Startseite.</p>',
     leistungen: '<h2>Unsere Leistungen</h2><p>Beschreibung der Leistungen.</p>',
@@ -18,14 +17,14 @@
 
   const app = document.getElementById('root');
 
-  // Baue Navigation
+  // Navigation bauen
   let navHtml = '<nav class="nav">';
   page[0].nav.forEach(item => {
-    navHtml += `<a href="${item.href}" id="nav-${item.name.toLowerCase()}">${item.name}</a>`;
+    navHtml += `<a href="${item.href}" data-key="${item.key}" class="mi">${item.name}</a>`;
   });
   navHtml += '</nav>';
 
-  // Setze Grundstruktur
+  // Grundstruktur setzen
   app.innerHTML = `
     <div class="top">
       <h1>${page[0].name}</h1>
@@ -35,18 +34,15 @@
   `;
 
   const pagesContainer = app.querySelector('.pages');
-  const navLinks = app.querySelectorAll('.nav a');
+  const navLinks = app.querySelectorAll('.nav a.mi');
 
-  function renderPage(){
-    let hash = window.location.hash.substring(1).toLowerCase();
-    if (!hash || !pageContent[hash]) hash = 'startseite';
+  function renderPage(key){
+    if (!key || !pageContent[key]) key = 'startseite';
+    pagesContainer.innerHTML = pageContent[key];
 
-    // Inhalt aktualisieren
-    pagesContainer.innerHTML = pageContent[hash];
-
-    // Aktiven Nav-Link markieren
+    // Aktiven Link markieren
     navLinks.forEach(link => {
-      if (link.getAttribute('href') === '#' + hash) {
+      if (link.dataset.key === key) {
         link.classList.add('active');
       } else {
         link.classList.remove('active');
@@ -54,10 +50,23 @@
     });
   }
 
-  // Erstes Rendern
-  renderPage();
+  // Klick-Event für alle .mi Links
+  navLinks.forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const key = e.currentTarget.dataset.key;
+      // Seite rendern ohne URL Hash zu ändern
+      renderPage(key);
+    });
+  });
 
-  // Bei Hash-Änderung neu rendern
-  window.addEventListener('hashchange', renderPage);
+  // Optional: Seite mit URL-Hash laden (initial)
+  let initialKey = window.location.hash.substring(1).toLowerCase();
+  renderPage(initialKey);
+
+  // Optional: Auch auf Hash-Änderung reagieren
+  window.addEventListener('hashchange', () => {
+    renderPage(window.location.hash.substring(1).toLowerCase());
+  });
 
 })();
