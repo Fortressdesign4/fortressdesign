@@ -57,7 +57,7 @@
     }
     .nav li a:hover,
     .nav li a.active {
-    transition:0.18ms all easy-out;
+      transition: 0.18s all ease-out;
       color: lightblue;
       padding: 0 15px;
     }
@@ -73,7 +73,7 @@
     }
     .pages {
       max-width: calc(100% - 20%);
-      width:980px;
+      width: 980px;
       margin: 25px auto;
       padding: 1em 2em;
       background: #111;
@@ -120,7 +120,10 @@
   ];
 
   const pageContent = {
-    startseite: '<h2>Willkommen auf der Startseite</h2><p>Herzlich Willkommen auf Fortressdesign</p><h1>Auszug unserer <span style="color:lightblue">Leistungen</span><section class="webdesign"><img src="./images/webdesign.png'>,
+    startseite: `<h2>Willkommen auf der Startseite</h2>
+                 <p>Herzlich Willkommen auf Fortressdesign</p>
+                 <h1>Auszug unserer <span style="color:lightblue">Leistungen</span></h1>
+                 <section class="webdesign"><img src="./images/webdesign.png" alt="Webdesign"></section>`,
     leistungen: '<h2>Unsere Leistungen</h2><p>Beschreibung der Leistungen.</p>',
     referenzen: '<h2>Referenzen</h2><p>Einige Kundenreferenzen.</p>',
     kontakt: '<h2>Kontakt</h2><p>So erreichen Sie uns...</p>'
