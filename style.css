@@ -3,7 +3,8 @@
   padding: 0;
   box-sizing: border-box;
 }
-
+#root .nav li  a{
+  color:#fff;
 #root {
   background-color: #000;
   color: #fff;
