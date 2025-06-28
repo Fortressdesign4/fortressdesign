@@ -1,18 +1,39 @@
-*{
-  margin: 0px;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
+
 #root {
-  background-color:#000;
-  color:#fff;
+  background-color: #000;
+  color: #fff;
+  font-family: sans-serif;
+  min-height: 100vh;
 }
-#root .top h1{
-  color:#fff;
+
+/* Navigation */
+#root .nav {
+  line-height: 2.5em;
 }
+
+/* Überschrift */
+#root .top h1 {
+  color: #fff;
+}
+
+/* Top-Bereich */
 #root .top {
   display: flex;
-  justify-content:space-between,
-    }
-#root .page{
+  justify-content: space-between;
+  align-items: center;
+  padding: 1em;
+}
+
+/* Seiteninhalt */
+#root .pages {
   max-width: 89%;
-  margin:25px auto;
+  margin: 25px auto;
+  padding: 1em;
+  background-color: #111;
+  border-radius: 8px;
 }
