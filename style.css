@@ -7,7 +7,10 @@
 #root .top h1{
   color:hsl(0,0,100%);
 }
-{
+#root .top {
+  display: flex;
+  justify-content:space-between,
+    }
 #root #header {
     background-image: url('https://github.com/Fortressdesign4/fortressdesign/raw/main/bg.png');
     background-size: cover; /* Adjust as needed */
