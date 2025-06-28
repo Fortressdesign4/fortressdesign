@@ -26,5 +26,6 @@
       <h1>${page[0].name}</h1>
       <nav class="nav">${navHtml}</nav>
     </div>
+    <div class="page">
   `;
 })();
