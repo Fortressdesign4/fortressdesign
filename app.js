@@ -1,115 +1,118 @@
 (() => {
   'use strict';
 
-  // --- Styles per JS injizieren ---
-  const styles = `
-    /* Reset und Grundstyles */
+  // Google Fonts URL für Poppins
+  const fontUrl = 'https://fonts.googleapis.com/css2?family=Poppins&display=swap';
+
+  // Fonts per Fetch laden und als Style einfügen
+  fetch(fontUrl)
+    .then(res => {
+      if (!res.ok) throw new Error('Fonts konnten nicht geladen werden');
+      return res.text();
+    })
+    .then(css => {
+      const styleFont = document.createElement('style');
+      styleFont.textContent = css;
+      document.head.appendChild(styleFont);
+    })
+    .catch(() => {
+      console.warn('Fonts konnten nicht geladen werden.');
+    });
+
+  // Styles injizieren
+  const css = `
     * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+      margin: 0; padding: 0; box-sizing: border-box;
     }
     body, html, #root {
       height: 100%;
       font-family: 'Poppins', Arial, sans-serif;
-      background-color: #000;
+      background: #000;
       color: #fff;
     }
-
-    /* Container */
     #root {
       min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
-
-    /* Navigation */
-    #root .nav {
-      background-color: #111;
-      border-bottom: 1px solid #444; /* feine Linie unter der Nav */
+    .nav {
+      background: #111;
+      border-bottom: 1px solid #444;
     }
-    #root .nav ul {
+    .nav ul {
       list-style: none;
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
     }
-    #root .nav li {
+    .nav li {
       padding: 10px 15px;
     }
-    #root .nav li a {
+    .nav li a {
       color: #fff;
       text-decoration: none;
-      display: block;
       font-size: 18px;
       transition: color 0.3s ease;
+      display: block;
     }
-    #root .nav li a:hover,
-    #root .nav li a.active {
+    .nav li a:hover,
+    .nav li a.active {
       color: lightblue;
       padding: 0 15px;
     }
-
-    /* Top Bereich */
-    #root .top {
+    .top {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 1em;
-      border-bottom: 1px solid #444; /* feine Linie unter dem Header */
+      border-bottom: 1px solid #444;
     }
-    #root .top h1 {
+    .top h1 {
       font-size: 2rem;
-      color: #fff;
     }
-
-    /* Seiteninhalt */
-    #root .pages {
+    .pages {
       max-width: calc(100% - 20%);
       margin: 25px auto;
       padding: 1em 2em;
-      background-color: #111;
+      background: #111;
       border-radius: 8px;
       box-shadow: 2px 2px 18px lightblue;
       flex-grow: 1;
     }
-
-    /* Beispiel-Seiten-spezifische Styles */
     .pages.startseite { background-color: #001f3f; }
     .pages.leistungen { background-color: #003366; }
     .pages.referenzen { background-color: #004080; }
     .pages.kontakt { background-color: #00264d; }
-
-    /* Responsive Navigation: Hamburger für kleine Bildschirme */
     @media (max-width: 600px) {
-      #root .nav ul {
+      .nav ul {
         flex-direction: column;
         align-items: center;
       }
-      #root .nav li {
+      .nav li {
         padding: 8px 0;
         width: 100%;
         text-align: center;
       }
-      #root .top {
+      .top {
         flex-direction: column;
         gap: 0.5em;
       }
     }
   `;
-  const styleTag = document.createElement('style');
-  styleTag.textContent = styles;
-  document.head.appendChild(styleTag);
 
-  // --- SPA-Daten ---
-  const page = [
+  const style = document.createElement('style');
+  style.textContent = css;
+  document.head.appendChild(style);
+
+  // Daten
+  const pagesData = [
     {
-      name: "Fortressdesign",
+      name: 'Fortressdesign',
       nav: [
-        { name: "Startseite", href: "#startseite", class: "startseite" },
-        { name: "Leistungen", href: "#leistungen", class: "leistungen" },
-        { name: "Referenzen", href: "#referenzen", class: "referenzen" },
-        { name: "Kontakt", href: "#kontakt", class: "kontakt" }
+        { name: 'Startseite', href: '#startseite', class: 'startseite' },
+        { name: 'Leistungen', href: '#leistungen', class: 'leistungen' },
+        { name: 'Referenzen', href: '#referenzen', class: 'referenzen' },
+        { name: 'Kontakt', href: '#kontakt', class: 'kontakt' },
       ]
     }
   ];
@@ -121,49 +124,43 @@
     kontakt: '<h2>Kontakt</h2><p>So erreichen Sie uns...</p>'
   };
 
-  // --- DOM Referenzen ---
-  const app = document.getElementById('root');
+  const root = document.getElementById('root');
 
-  // Navigation HTML bauen
+  // Navigation html bauen
   let navHtml = '<nav class="nav"><ul>';
-  page[0].nav.forEach(item => {
+  pagesData[0].nav.forEach(item => {
     navHtml += `<li><a href="${item.href}" id="nav-${item.class}">${item.name}</a></li>`;
   });
   navHtml += '</ul></nav>';
 
-  // Grundstruktur setzen
-  app.innerHTML = `
+  // Grundstruktur
+  root.innerHTML = `
     <div class="top">
-      <h1>${page[0].name}</h1>
+      <h1>${pagesData[0].name}</h1>
       ${navHtml}
     </div>
     <div class="pages"></div>
   `;
 
-  const pagesContainer = app.querySelector('.pages');
-  const navLinks = app.querySelectorAll('.nav a');
+  const pagesDiv = root.querySelector('.pages');
+  const navLinks = root.querySelectorAll('.nav a');
 
-  // Seite rendern
-  function renderPage() {
-    let hash = window.location.hash.substring(1).toLowerCase();
+  function render() {
+    let hash = window.location.hash.slice(1).toLowerCase();
     if (!hash || !pageContent[hash]) hash = 'startseite';
 
-    pagesContainer.innerHTML = pageContent[hash];
-    pagesContainer.className = 'pages ' + hash;
+    pagesDiv.innerHTML = pageContent[hash];
+    pagesDiv.className = 'pages ' + hash;
 
     navLinks.forEach(link => {
-      if (link.getAttribute('href') === '#' + hash) {
-        link.classList.add('active');
-      } else {
-        link.classList.remove('active');
-      }
+      link.classList.toggle('active', link.getAttribute('href') === '#' + hash);
     });
   }
 
   // Erstes Rendern
-  renderPage();
+  render();
 
   // Auf Hash-Änderung reagieren
-  window.addEventListener('hashchange', renderPage);
+  window.addEventListener('hashchange', render);
 
 })();
